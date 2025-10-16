@@ -1,0 +1,67 @@
+{
+	"connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+	"type.name": "sixbank-audit-logs-sink",
+	"topics": "sixbank-audit-logs-sink",
+	"tasks.max": "1",
+	"name": "sixbank-audit-logs-sink",
+	"value.converter.schemas.enable": "false",
+	"connection.url": "http://elasticsearch:9200",
+	"value.converter": "org.apache.kafka.connect.json.JsonConverter",
+	"key.converter": "org.apache.kafka.connect.storage.StringConverter",
+	"schema.ignore": "true"
+}
+
+//This is for the cluster replicator connector for cluster linking
+
+{
+	"connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
+	"dest.kafka.sasl.mechanism": "PLAIN",
+	"src.key.converter": "org.apache.kafka.connect.storage.StringConverter",
+	"tasks.max": "1",
+	"src.value.converter": "org.apache.kafka.connect.json.JsonConverter",
+	"topic.create.replication.factor": "1",
+	"topic.replication.factor": "1",
+	"src.value.converter.schemas.enable": "false",
+	"dest.kafka.security.protocol": "SASL_SSL",
+	"consumer.override.auto.offset.reset": "earliest",
+	"dest.kafka.bootstrap.servers": "pkc-921jm.us-east-2.aws.confluent.cloud:9092",
+	"topic.config.sync": "false",
+	"name": "replicator",
+	"value.converter.schemas.enable": "false",
+	"topic.auto.create": "false",
+	"value.converter": "org.apache.kafka.connect.json.JsonConverter",
+	"topic.whitelist": "sixbank-audit-logs-sink",
+	"src.kafka.bootstrap.servers": "kafka-01:29092",
+	"dest.kafka.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username='VTHE6VKCPCIG5FNT' password='JHiVZ3N0+g+vaPTxVY8k2w1avbDThb5WTAVhKBkP6DXWPmxCNt3c30Bb+B19fOoP';",
+	"key.converter": "org.apache.kafka.connect.storage.StringConverter"
+}
+
+
+{
+	"connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
+	"errors.log.include.messages": "true",
+	"dest.kafka.sasl.mechanism": "PLAIN",
+	"tasks.max": "3",
+	"topic.replication.factor": "1",
+	"src.consumer.request.timeout.ms": "30000",
+	"value.converter.basic.auth.credentials.source": "******",
+	"dest.kafka.security.protocol": "SASL_SSL",
+	"src.consumer.session.timeout.ms": "10000",
+	"value.converter": "io.confluent.connect.avro.AvroConverter",
+	"src.consumer.metadata.max.age.ms": "5000",
+	"errors.log.enable": "true",
+	"topic.whitelist": "sensor-1-topic,sensor-2-topic,sensor-3-topic",
+	"errors.retry.timeout": "30000",
+	"offset.timestamps.commit": "false",
+	"errors.retry.delay.max.ms": "10000",
+	"offset.flush.interval.ms": "10000",
+	"value.converter.schema.registry.url": "https://psrc-mw0d1.us-east-2.aws.confluent.cloud",
+	"value.converter.basic.auth.user.info": "******",
+	"consumer.override.auto.offset.reset": "earliest",
+	"dest.kafka.bootstrap.servers": "pkc-921jm.us-east-2.aws.confluent.cloud:9092",
+	"name": "sensor-cluster-replicator",
+	"topic.auto.create": "true",
+	"src.kafka.bootstrap.servers": "kafka-01:29092",
+	"dest.kafka.sasl.jaas.config": "******",
+	"src.consumer.heartbeat.interval.ms": "3000"
+}

@@ -1,0 +1,6 @@
+FROM confluentinc/cp-kafka-connect:7.4.0
+
+# Install Elasticsearch connector
+RUN confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
+
+#RUN confluent-hub install --no-prompt confluentinc/kafka-connect-replicator:7.4.0
