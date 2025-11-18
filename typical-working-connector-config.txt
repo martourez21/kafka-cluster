@@ -32,7 +32,7 @@
 	"value.converter": "org.apache.kafka.connect.json.JsonConverter",
 	"topic.whitelist": "sixbank-audit-logs-sink",
 	"src.kafka.bootstrap.servers": "kafka-01:29092",
-	"dest.kafka.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username='VTHE6VKCPCIG5FNT' password='JHiVZ3N0+g+vaPTxVY8k2w1avbDThb5WTAVhKBkP6DXWPmxCNt3c30Bb+B19fOoP';",
+	"dest.kafka.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username='VTHE####################' password='*****************************';",
 	"key.converter": "org.apache.kafka.connect.storage.StringConverter"
 }
 
