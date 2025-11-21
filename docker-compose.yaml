@@ -11,8 +11,6 @@ services:
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-01:29093'
-      
-      # Two listeners: PLAINTEXT (internal Docker), CONTROLLER
       KAFKA_LISTENERS: 'PLAINTEXT://:29092,EXTERNAL://:9092,CONTROLLER://:29093'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-01:29092,EXTERNAL://localhost:9092'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT'
@@ -35,6 +33,112 @@ services:
       timeout: 10s
       retries: 10
       start_period: 40s
+
+  schemaregistry0-01:
+    image: confluentinc/cp-schema-registry:7.2.1
+    hostname: schemaregistry0-01
+    container_name: schemaregistry0-01
+    ports:
+      - "8081:8081"
+    depends_on:
+      kafka-01:
+        condition: service_healthy
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-01:29092
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry0-01
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: GET,POST,PUT,OPTIONS
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: '*'
+      SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: "http"
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
+    networks:
+      - kafka-network-02
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  connect-1:
+    image: confluentinc/cp-server-connect:7.1.1
+    restart: always
+    hostname: connect-1
+    container_name: connect-1
+    ports:
+      - "28084:8083"
+    volumes:
+      - ./data:/data
+      - ./plugins:/usr/share/confluent-hub-components  # Add this volume
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: pkc-921jm.us-east__________________:9092
+      CONNECT_GROUP_ID: "kc101-connect"
+      CONNECT_CONFIG_STORAGE_TOPIC: "_kc101-connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "_kc101-connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "_kc101-connect-status"
+      CONNECT_REPLICATION_FACTOR: 3
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+
+      # 🔹 Schema Registry Configuration
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "https://psrc-8kz3w.us______________________________"
+      CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: USER_INFO
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "DL7QKP3*********:#################################HOkwy6yIIpnkk1FWU2AkU+PxEBuxg"
+
+      # 🔹 Plugin Path - CRITICAL FIX
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+
+      # 🔹 REST and Logging
+      CONNECT_REST_ADVERTISED_HOST_NAME: "connect-1"
+      CONNECT_LISTENERS: http://0.0.0.0:8083
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+
+      # 🔹 Confluent Cloud broker config
+      CONNECT_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_RETRY_BACKOFF_MS: "500"
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+
+      # 🔹 Authentication for Kafka cluster
+      CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_SASL_MECHANISM: PLAIN
+      CONNECT_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="5VXGC3P*********" password="cfltITj1Jq5SY2zwja0MWRazmKd2Yib*****************************************";'
+
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_PRODUCER_SASL_MECHANISM: PLAIN
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="5VXGC###################" password="############################Yib2tn9GH7ctWFsewewQ5JRkjaeiXmLTYPhw";'
+
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_CONSUMER_SASL_MECHANISM: PLAIN
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="5VXGC3P*************************" password="#######################b2tn9GH7ctWFsewewQ5JRkjaeiXmLTYPhw";'
+      
+    networks:
+      - kafka-network-02
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Elasticsearch Connector..."
+        
+        # Try the latest version first
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
+        
+        # If that fails, try a specific compatible version
+        if [ $? -ne 0 ]; then
+          echo "Trying alternative version..."
+          confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:14.0.5
+        fi
+        
+        echo "✅ Installation complete, launching Kafka Connect..."
+        /etc/confluent/docker/run
+
 
   kafka-connect-01:
     build:
@@ -87,34 +191,48 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-      
-  schemaregistry0-01:
-    image: confluentinc/cp-schema-registry:7.2.1
-    hostname: schemaregistry0-01
-    container_name: schemaregistry0-01
+
+  # 🟦 KSQLDB Server
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.29.0
+    container_name: ksqldb-server
+    hostname: ksqldb-server
     ports:
-      - "8081:8081"
+      - "8088:8088"
     depends_on:
       kafka-01:
         condition: service_healthy
+      schemaregistry0-01:
+        condition: service_healthy
     environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-01:29092
-      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
-      SCHEMA_REGISTRY_HOST_NAME: schemaregistry0-01
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: GET,POST,PUT,OPTIONS
-      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: '*'
-      SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: "http"
-      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
-      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
+      KSQL_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-01:29092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SERVICE_ID: ksqldb_service_01
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schemaregistry0-01:8081
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
+      KSQL_KSQL_STREAMS_STATE_DIR: /tmp/ksqldb
+      KSQL_LOG4J_ROOT_LOGLEVEL: INFO
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
     networks:
       - kafka-network-02
-    healthcheck:  # ADDED: Health check for Schema Registry
-      test: ["CMD", "curl", "-f", "http://localhost:8081"]
-      interval: 30s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/info"]
+      interval: 20s
       timeout: 10s
-      retries: 3
+      retries: 5
       start_period: 40s
+
+  # 🟩 KSQLDB CLI
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.29.0
+    container_name: ksqldb-cli
+    depends_on:
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
+    networks:
+      - kafka-network-02
 
   kafka-ui-01:
     container_name: kafka-ui-01
@@ -125,16 +243,25 @@ services:
       kafka-01:
         condition: service_healthy
       schemaregistry0-01:
-        condition: service_healthy  # CHANGED: Use healthcheck
+        condition: service_healthy
+      connect-1:
+        condition: service_healthy
       kafka-connect-01:
-        condition: service_healthy  # CHANGED: Use healthcheck
+        condition: service_healthy
+      ksqldb-server:
+        condition: service_healthy
     environment:
       DYNAMIC_CONFIG_ENABLED: 'true'
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-01:29092
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schemaregistry0-01:8081
+      KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect-01
-      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect-01:8083  # FIXED: Internal port 8083
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect-01:8083
+      KAFKA_CLUSTERS_1_NAME: confluent-cloud
+      KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: pkc-921jm.us-ea________________:9092
+      KAFKA_CLUSTERS_1_KAFKACONNECT_0_NAME: connect-1
+      KAFKA_CLUSTERS_1_KAFKACONNECT_0_ADDRESS: http://connect-1:8083
     networks:
       - kafka-network-02
 
