@@ -5,7 +5,7 @@
       - "28085:28083"
     environment:
       # Confluent Cloud Kafka connection
-      CONNECT_BOOTSTRAP_SERVERS: 'pkc-921jm.us-east-2.aws.confluent.cloud:9092'
+      CONNECT_BOOTSTRAP_SERVERS: 'pkc-921jm.us-east-2************************'
       CONNECT_REST_PORT: 28083
       CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect-es-ccloud
       CONNECT_REST_ADVERTISED_PORT: 28083
@@ -14,7 +14,7 @@
       # SASL/SSL authentication
       CONNECT_SECURITY_PROTOCOL: 'SASL_SSL'
       CONNECT_SASL_MECHANISM: 'PLAIN'
-      CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username='7K7OFTMQCSJO5TVE' password='cfltohK+w7xuoglGJqShq6G2eHIXJ0I6Hma6uooyMLuoP/boPHNr1MArbjX/MWgA';"
+      CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username='7K7##################' password='***************************6uooyMLuoP/boPHNr1MArbjX/MWgA';"
 
       # Connect cluster configuration
       CONNECT_GROUP_ID: 'ccloud-connect-group'
@@ -28,9 +28,9 @@
       # Key and value converters
       CONNECT_KEY_CONVERTER: 'org.apache.kafka.connect.storage.StringConverter'
       CONNECT_VALUE_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'https://psrc-13rg3dy.us-east-2.aws.confluent.cloud'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'https://psrc-13rg3dy.us-east-************************'
       CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: 'USER_INFO'
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: '5VIWTAHWLHBWDSDJ:cfltve7Ek6N5jSB4cJr77RN3m2xg/Ds5uiffwG1SyXIq3BYBhshqkAm2cjSwv75A'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: '5VIWT#########:########################Ds5uiffwG1SyXIq3BYBhshqkAm2cjSwv75A'
 
       # Internal converters
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
